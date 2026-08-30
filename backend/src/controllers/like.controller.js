@@ -16,7 +16,7 @@ const sanitizeLike = (like, requester = null) => {
     } else {
       likeObj.user = { ...likeObj.user };
     }
-    delete likeObj.user.googleId;
+    delete likeObj.user.auth0Sub;
     delete likeObj.user.__v;
 
     // Email privacy: only show email to user self or Admin

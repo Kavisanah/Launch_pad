@@ -8,7 +8,7 @@ import ApiResponse from "../utils/api-response.js";
 const sanitizeUser = (user) => {
   if (!user) return null;
   const userObj = typeof user.toObject === "function" ? user.toObject() : { ...user };
-  delete userObj.googleId;
+  delete userObj.auth0Sub;
   delete userObj.__v;
   return userObj;
 };

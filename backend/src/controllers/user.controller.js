@@ -11,7 +11,7 @@ import NotFoundException from "../exceptions/not-found.exception.js";
 const sanitizeUser = (user, requester = null) => {
   if (!user) return null;
   const userObj = typeof user.toObject === "function" ? user.toObject() : { ...user };
-  delete userObj.googleId;
+  delete userObj.auth0Sub;
   delete userObj.__v;
 
   const targetUserId = (userObj._id || userObj.id || "").toString();

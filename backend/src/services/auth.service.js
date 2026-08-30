@@ -1,127 +1,56 @@
-import { verifyGoogleToken } from "../utils/googleAuth.js";
-import { generateToken } from "../utils/jwt.js";
 import { userRepository } from "../container/container.js";
+import env from "../config/env.js";
 import AuthorizationException from "../exceptions/authorization.exception.js";
-import NotFoundException from "../exceptions/not-found.exception.js";
-import ValidationException from "../exceptions/validation.exception.js";
 
 /**
- * Handles user login and registration using Google OAuth ID Token.
- * @param {string} idToken - The Google ID Token
- * @returns {Promise<{user: Object, token: string}>}
+ * Fetches user profile by auth0Sub, auto-registering on first login.
+ * @param {Object} tokenUser - The decoded token user payload from auth middleware
+ * @param {string} rawToken - The raw Bearer token for /userinfo fetching if necessary
+ * @returns {Promise<Object>} The user profile
  */
-export const loginWithGoogle = async (idToken, requestedRole = "STUDENT") => {
-  // 1. Verify Google ID token
-  const { googleId, name, email, picture } = await verifyGoogleToken(idToken);
-
-  // 2. Find user by googleId OR email
-  let user = await userRepository.findOne({
-    $or: [{ googleId }, { email }],
-  });
-
+export const getMe = async (tokenUser, rawToken) => {
+  let user = await userRepository.findOne({ auth0Sub: tokenUser.auth0Sub });
+  
   if (!user) {
-    let role = "STUDENT";
-    let staffVerified = false;
-    if (requestedRole === "RECRUITER") {
-      const isTestRecruiter = email === "recruiter@test.com";
-      const isOrgEmail = email.endsWith("@faculty.edu") || email.endsWith("@staff.com");
-      if (!isTestRecruiter && !isOrgEmail) {
-        throw new ValidationException(
-          "Recruiter registration requires an official organization email address (e.g. ending in @faculty.edu or @staff.com)."
-        );
+    let email = tokenUser.email;
+    let name = tokenUser.name;
+    let profilePicture = "";
+
+    // Sync profile fields from /userinfo if they are not in the token
+    if ((!email || !name) && rawToken) {
+      try {
+        const response = await fetch(`https://${env.AUTH0_DOMAIN}/userinfo`, {
+          headers: { Authorization: `Bearer ${rawToken}` },
+        });
+        if (response.ok) {
+          const info = await response.json();
+          email = email || info.email;
+          name = name || info.name || info.nickname || "New Student";
+          profilePicture = info.picture || "";
+        }
+      } catch (err) {
+        console.error("Failed to query /userinfo:", err.message);
       }
-      role = "RECRUITER";
-      staffVerified = true;
-    } else if (email === "admin@test.com") {
-      role = "ADMIN";
     }
-    // 3. If not found: create new user
+
+    // Auto-register user as STUDENT
     user = await userRepository.create({
-      googleId,
-      name,
-      email,
-      profilePicture: picture || "",
-      role,
-      staffVerified,
+      auth0Sub: tokenUser.auth0Sub,
+      name: name || "New Student",
+      email: email || `${tokenUser.auth0Sub}@student.com`,
+      profilePicture: profilePicture || "",
+      role: "STUDENT",
       isActive: true,
     });
   } else {
-    // 4. If found but deactivated, throw AuthorizationException
     if (!user.isActive) {
       throw new AuthorizationException("Account is deactivated");
     }
-
-    // Link Google ID or profile picture if not already linked (e.g. if created differently)
-    let updated = false;
-    let updateFields = {};
-
-    if (!user.googleId) {
-      user.googleId = googleId;
-      updateFields.googleId = googleId;
-      updated = true;
-    }
-    if (!user.profilePicture && picture) {
-      user.profilePicture = picture;
-      updateFields.profilePicture = picture;
-      updated = true;
-    }
-    // Promote admin@test.com to ADMIN if somehow created with wrong role
-    if (email === "admin@test.com" && user.role !== "ADMIN") {
-      user.role = "ADMIN";
-      updateFields.role = "ADMIN";
-      updated = true;
-    }
-    if (user.role === "RECRUITER" && !user.staffVerified) {
-      const isTestRecruiter = email === "recruiter@test.com";
-      const isOrgEmail = email.endsWith("@faculty.edu") || email.endsWith("@staff.com");
-      if (isTestRecruiter || isOrgEmail) {
-        user.staffVerified = true;
-        updateFields.staffVerified = true;
-        updated = true;
-      }
-    }
-
-    if (updated) {
-      user = await userRepository.updateById(user._id, updateFields);
-    }
   }
 
-  // 5. Generate JWT token
-  const token = generateToken({
-    userId: user._id,
-    role: user.role,
-    email: user.email,
-    staffVerified: user.staffVerified,
-  });
-
-  // 6. Return user and JWT
-  return { user, token };
-};
-
-/**
- * Fetches user profile by ID.
- * @param {string} userId - User identifier
- * @returns {Promise<Object>} The user profile
- * @throws {NotFoundException} if user does not exist
- */
-export const getMe = async (userId) => {
-  const user = await userRepository.findById(userId);
-  if (!user) {
-    throw new NotFoundException("User not found");
-  }
   return user;
 };
 
-/**
- * Stateless logout function.
- * @returns {Promise<{success: boolean}>}
- */
-export const logout = async () => {
-  return { success: true };
-};
-
 export default {
-  loginWithGoogle,
   getMe,
-  logout,
 };

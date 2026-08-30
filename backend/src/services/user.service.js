@@ -62,8 +62,12 @@ export const updateProfile = async (userId, requestingUserId, data, file) => {
   if (data.bio !== undefined) {
     updateData.bio = sanitizeInput(data.bio);
   }
-  if (data.university !== undefined) updateData.university = data.university;
-  if (data.department !== undefined) updateData.department = data.department;
+  if (data.university !== undefined) {
+    updateData.university = sanitizeInput(data.university);
+  }
+  if (data.department !== undefined) {
+    updateData.department = sanitizeInput(data.department);
+  }
   if (data.graduationYear !== undefined) {
     updateData.graduationYear = Number(data.graduationYear) || undefined;
   }

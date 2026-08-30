@@ -6,6 +6,8 @@ import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import mongoose from "mongoose";
 
+import env from "./config/env.js";
+
 import errorMiddleware from "./middlewares/error.middleware.js";
 import { globalLimiter } from "./middlewares/rate-limit.middleware.js";
 import NotFoundException from "./exceptions/not-found.exception.js";
@@ -23,27 +25,28 @@ const app = express();
 // Security Headers (Helmet)
 app.use(
   helmet({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        connectSrc: ["'self'", `https://${env.AUTH0_DOMAIN}`],
+        frameAncestors: ["'none'"],
+      },
+    },
     crossOriginResourcePolicy: { policy: "cross-origin" },
   })
 );
 
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://launch-pad-titans.vercel.app",
-];
-
 app.use(
   cors({
-    origin: allowedOrigins,
-    credentials: true,
+    origin: env.CLIENT_URL,
+    credentials: false,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
 app.use(compression());
-app.use(express.json());
+app.use(express.json({ limit: "50kb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan("dev"));

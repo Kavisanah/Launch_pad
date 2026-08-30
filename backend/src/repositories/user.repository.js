@@ -6,8 +6,8 @@ class UserRepository extends BaseRepository {
     super(User);
   }
 
-  async findByGoogleId(googleId) {
-    return await this.model.findOne({ googleId });
+  async findByAuth0Sub(auth0Sub) {
+    return await this.model.findOne({ auth0Sub });
   }
 
   async findByEmail(email) {

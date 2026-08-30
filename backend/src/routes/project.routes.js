@@ -1,8 +1,8 @@
 import express from "express";
 import { authenticate, optionalAuthenticate, authorize } from "../middlewares/auth.middleware.js";
 import { uploadFields } from "../middlewares/upload.middleware.js";
-import { validate } from "../middlewares/validation.middleware.js";
-import { createProject, updateProject } from "../validators/project.validator.js";
+import { validate, validateQuery } from "../middlewares/validation.middleware.js";
+import { createProject, updateProject, listProjectsQuery, searchProjectsQuery } from "../validators/project.validator.js";
 import { uploadLimiter } from "../middlewares/rate-limit.middleware.js";
 import {
   createProject as createProjectController,
@@ -31,10 +31,10 @@ router.post(
 );
 
 // GET /api/projects
-router.get("/", optionalAuthenticate, getProjects);
+router.get("/", optionalAuthenticate, validateQuery(listProjectsQuery), getProjects);
 
 // GET /api/projects/search
-router.get("/search", optionalAuthenticate, searchProjects);
+router.get("/search", optionalAuthenticate, validateQuery(searchProjectsQuery), searchProjects);
 
 // GET /api/projects/:id
 router.get("/:id", optionalAuthenticate, getProjectById);

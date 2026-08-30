@@ -1,3 +1,5 @@
+import https from "https";
+import fs from "fs";
 import app from "./app.js";
 import { connect } from "./config/database.js";
 import env from "./config/env.js";
@@ -9,9 +11,23 @@ let server;
 const startServer = async () => {
   try {
     await connect();
-    server = app.listen(env.PORT, () => {
-      logger.info(`🚀 Server running on http://localhost:${env.PORT} in ${env.NODE_ENV} mode`);
-    });
+    
+    const hasSSL = env.HTTPS_KEY_PATH && env.HTTPS_CERT_PATH &&
+                   fs.existsSync(env.HTTPS_KEY_PATH) && fs.existsSync(env.HTTPS_CERT_PATH);
+
+    if (hasSSL) {
+      const options = {
+        key: fs.readFileSync(env.HTTPS_KEY_PATH),
+        cert: fs.readFileSync(env.HTTPS_CERT_PATH),
+      };
+      server = https.createServer(options, app).listen(env.PORT, () => {
+        logger.info(`🚀 Secure Server running on https://localhost:${env.PORT} in ${env.NODE_ENV} mode`);
+      });
+    } else {
+      server = app.listen(env.PORT, () => {
+        logger.info(`🚀 Server running on http://localhost:${env.PORT} in ${env.NODE_ENV} mode`);
+      });
+    }
   } catch (error) {
     logger.error(`Failed to start server: ${error.message}`);
     process.exit(1);

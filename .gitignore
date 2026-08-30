@@ -1,0 +1,18 @@
+# Local Development Certificates
+certs/
+*.pem
+*.crt
+*.key
+
+# Dependencies
+node_modules/
+
+# Environment Variables
+.env
+.env*.local
+
+# Editor Settings & OS Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -13,7 +13,7 @@ const sanitizeFollowRecord = (follow, requester = null) => {
   const checkAndSanitize = (user) => {
     if (!user) return null;
     let userObj = typeof user.toObject === "function" ? user.toObject() : { ...user };
-    delete userObj.googleId;
+    delete userObj.auth0Sub;
     delete userObj.__v;
 
     const userId = (userObj._id || userObj.id || "").toString();

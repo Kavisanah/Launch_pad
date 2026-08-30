@@ -11,11 +11,10 @@ const seedDatabase = async () => {
     let admin = await User.findOne({ email: adminEmail });
     if (!admin) {
       admin = await User.create({
-        googleId: "seed_admin_google_id",
+        auth0Sub: "auth0|seed_admin_id",
         name: "Administrator",
         email: adminEmail,
         role: "ADMIN",
-        staffVerified: false,
         isActive: true,
       });
       logger.info(`[Seed] Admin account created: ${adminEmail}`);
@@ -25,11 +24,10 @@ const seedDatabase = async () => {
     let recruiter = await User.findOne({ email: recruiterEmail });
     if (!recruiter) {
       recruiter = await User.create({
-        googleId: "seed_recruiter_google_id",
+        auth0Sub: "auth0|seed_recruiter_id",
         name: "Sarah Mitchell",
         email: recruiterEmail,
         role: "RECRUITER",
-        staffVerified: true,
         isActive: true,
         bio: "Senior Technical Recruiter at TechCorp with 8 years of experience in sourcing engineering talent.",
       });
@@ -38,7 +36,7 @@ const seedDatabase = async () => {
 
     const students = [
       {
-        googleId: "seed_student_1_google_id",
+        auth0Sub: "auth0|seed_student_1_id",
         name: "Alex Chen",
         email: "alex.chen@student.edu",
         role: "STUDENT",
@@ -49,7 +47,7 @@ const seedDatabase = async () => {
         graduationYear: 2025,
       },
       {
-        googleId: "seed_student_2_google_id",
+        auth0Sub: "auth0|seed_student_2_id",
         name: "Priya Nair",
         email: "priya.nair@student.edu",
         role: "STUDENT",
@@ -60,7 +58,7 @@ const seedDatabase = async () => {
         graduationYear: 2025,
       },
       {
-        googleId: "seed_student_3_google_id",
+        auth0Sub: "auth0|seed_student_3_id",
         name: "Marcus Oliveira",
         email: "marcus.oliveira@student.edu",
         role: "STUDENT",
@@ -71,7 +69,7 @@ const seedDatabase = async () => {
         graduationYear: 2026,
       },
       {
-        googleId: "seed_student_4_google_id",
+        auth0Sub: "auth0|seed_student_4_id",
         name: "Amara Osei",
         email: "amara.osei@student.edu",
         role: "STUDENT",

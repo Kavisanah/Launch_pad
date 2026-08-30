@@ -1,6 +1,6 @@
 import React from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { GoogleOAuthProvider } from '@react-oauth/google';
+import { Auth0Provider } from '@auth0/auth0-react';
 import { Toaster } from 'react-hot-toast';
 
 import { AuthProvider } from './contexts/AuthContext';
@@ -134,16 +134,28 @@ const router = createBrowserRouter([
 ]);
 
 export default function App() {
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+  const domain = import.meta.env.VITE_AUTH0_DOMAIN || '';
+  const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID || '';
+  const audience = import.meta.env.VITE_AUTH0_AUDIENCE || '';
+  const redirectUri = import.meta.env.VITE_AUTH0_REDIRECT_URI || window.location.origin;
 
   return (
-    <GoogleOAuthProvider clientId={clientId} locale="en">
+    <Auth0Provider
+      domain={domain}
+      clientId={clientId}
+      authorizationParams={{
+        redirect_uri: redirectUri,
+        audience: audience,
+        scope: 'openid profile email',
+      }}
+      cacheLocation="memory"
+    >
       <ThemeProvider>
         <AuthProvider>
           <RouterProvider router={router} />
           <Toaster position="top-right" />
         </AuthProvider>
       </ThemeProvider>
-    </GoogleOAuthProvider>
+    </Auth0Provider>
   );
 }

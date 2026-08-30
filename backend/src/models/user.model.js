@@ -5,7 +5,7 @@ const { Schema, model } = mongoose;
 
 const userSchema = new Schema(
   {
-    googleId: {
+    auth0Sub: {
       type: String,
       required: true,
       unique: true,

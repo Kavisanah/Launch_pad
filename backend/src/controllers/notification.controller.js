@@ -15,7 +15,7 @@ const sanitizeNotification = (notif) => {
     } else {
       obj.sender = { ...obj.sender };
     }
-    delete obj.sender.googleId;
+    delete obj.sender.auth0Sub;
     delete obj.sender.__v;
   }
   return obj;

@@ -1,68 +1,85 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authService } from '../services/auth.service';
+import { useAuth0 } from '@auth0/auth0-react';
+import axiosInstance, { setAuthToken } from '../api/axiosInstance';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  const {
+    isAuthenticated: isAuth0Authenticated,
+    isLoading: isAuth0Loading,
+    getAccessTokenSilently,
+    loginWithRedirect,
+    logout: auth0Logout,
+  } = useAuth0();
+
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const restoreSession = async () => {
-      if (!authService.hasSessionMarker()) {
-        setUser(null);
-        setIsAuthenticated(false);
-        setIsLoading(false);
-        return;
-      }
+    const syncUser = async () => {
+      if (isAuth0Authenticated) {
+        try {
+          const token = await getAccessTokenSilently();
+          setAuthToken(token);
 
-      try {
-        const response = await authService.getMe();
-        // Backend responds with user object or details inside response.data
-        if (response.data && response.data.data) {
-          const userData = response.data.data;
-          setUser(userData);
-          setIsAuthenticated(true);
-        } else {
+          // Get database profile & role from the backend /me endpoint
+          const response = await axiosInstance.get('/auth/me');
+          if (response.data && response.data.data) {
+            setUser(response.data.data);
+            setIsAuthenticated(true);
+          } else {
+            setUser(null);
+            setIsAuthenticated(false);
+            setAuthToken(null);
+          }
+        } catch (error) {
+          console.error('Error syncing user with backend:', error);
           setUser(null);
           setIsAuthenticated(false);
-          authService.clearSession();
+          setAuthToken(null);
+        } finally {
+          setIsLoading(false);
         }
-      } catch {
-        // Silently fail on 401 Unauthorized (expected when logged out)
-        setUser(null);
-        setIsAuthenticated(false);
-        authService.clearSession();
-      } finally {
-        setIsLoading(false);
+      } else {
+        if (!isAuth0Loading) {
+          setUser(null);
+          setIsAuthenticated(false);
+          setAuthToken(null);
+          setIsLoading(false);
+        }
       }
     };
 
-    restoreSession();
-  }, []);
+    syncUser();
+  }, [isAuth0Authenticated, isAuth0Loading, getAccessTokenSilently]);
 
-  const login = (userData) => {
-    authService.markSession();
-    setUser(userData);
-    setIsAuthenticated(true);
+  const login = async () => {
+    setIsLoading(true);
+    await loginWithRedirect();
   };
 
   const logout = async () => {
-    try {
-      await authService.logout();
-    } catch (error) {
-      console.error('Logout request failed:', error);
-    } finally {
-      authService.clearSession();
-      setUser(null);
-      setIsAuthenticated(false);
-      window.location.href = '/';
-    }
+    setAuthToken(null);
+    setUser(null);
+    setIsAuthenticated(false);
+    await auth0Logout({ logoutParams: { returnTo: window.location.origin } });
   };
 
+  const combinedLoading = isLoading || isAuth0Loading;
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, isAuthenticated, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading: combinedLoading,
+        loading: combinedLoading,
+        isAuthenticated,
+        login,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -75,3 +92,5 @@ export function useAuth() {
   }
   return context;
 }
+
+export default AuthContext;

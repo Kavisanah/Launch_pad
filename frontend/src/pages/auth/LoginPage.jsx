@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { authService } from '../../services/auth.service';
 import { statsService } from '../../services/stats.service';
-import { GoogleLogin } from '@react-oauth/google';
 import Spinner from '../../components/ui/Spinner';
 import toast from 'react-hot-toast';
 import logo from '../../assets/logo.png';
@@ -13,7 +11,6 @@ export default function LoginPage() {
   const navigate = useNavigate();
 
   const [actionLoading, setActionLoading] = useState(false);
-  const [originError, setOriginError] = useState(false);
   const [platformStats, setPlatformStats] = useState({ totalStudents: 0, totalRecruiters: 0, totalProjects: 0 });
 
   /* ── Fetch platform stats from DB ── */
@@ -34,35 +31,16 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, isLoading, navigate, user]);
 
-  const processUserData = (userData, toastId) => {
-    if (userData) {
-      const isNew = userData.createdAt && new Date() - new Date(userData.createdAt) < 10000;
-      if (isNew) localStorage.setItem('showWelcomeOverlay', 'true');
-      login(userData);
-      toast.success(`Welcome, ${userData.name}`, { id: toastId });
-    } else {
-      toast.error('Authentication failed.', { id: toastId });
-    }
-  };
-
-  /* ── Google OAuth (ID token credential flow) ── */
-  const handleGoogleSuccess = async (credentialResponse) => {
+  const handleAuth0Login = async () => {
     setActionLoading(true);
-    const toastId = toast.loading('Authenticating...');
+    const toastId = toast.loading('Redirecting to Auth0...');
     try {
-      const response = await authService.googleLogin(credentialResponse.credential, 'STUDENT');
-      processUserData(response.data?.data, toastId);
+      await login();
     } catch (error) {
       console.error(error);
-      toast.error(error.response?.data?.message || 'Google Sign-In failed.', { id: toastId });
-    } finally {
+      toast.error('Auth0 Redirect failed.', { id: toastId });
       setActionLoading(false);
     }
-  };
-
-  const handleGoogleError = () => {
-    setOriginError(true);
-    toast.error('Google Sign-In failed. Ensure the origin is registered in Google Cloud Console.');
   };
 
   if (isLoading) {
@@ -125,40 +103,31 @@ export default function LoginPage() {
 
             <div className="space-y-1">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Sign in</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Use your Google account to continue</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Use your Auth0 account to continue</p>
             </div>
 
-            {/* Origin Error */}
-            {originError && (
-              <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/35 rounded-xl p-4 space-y-1">
-                <p className="text-sm font-semibold text-red-600 dark:text-red-400">Google OAuth: Origin Not Registered</p>
-                <p className="text-xs text-red-600 dark:text-red-400 leading-relaxed">
-                  Add <strong>{window.location.origin}</strong> to your Google Cloud Console under
-                  APIs &amp; Services &rarr; Credentials &rarr; Authorized JavaScript Origins.
-                </p>
-              </div>
-            )}
-
-            {/* Google Sign-In */}
+            {/* Auth0 Sign-In */}
             <div className="flex flex-col gap-2.5">
-              {actionLoading ? (
-                <button id="google-signin-btn" disabled className="flex items-center gap-2.5 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl cursor-not-allowed opacity-70 text-gray-700 dark:text-gray-200 text-sm font-medium">
-                  <Spinner size="sm" />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Signing in...</span>
-                </button>
-              ) : (
-                <div id="google-signin-btn" className="flex justify-start">
-                  <GoogleLogin
-                    onSuccess={handleGoogleSuccess}
-                    onError={handleGoogleError}
-                    useOneTap={false}
-                    theme="outline"
-                    shape="rectangular"
-                    text="continue_with"
-                    width="320"
-                  />
-                </div>
-              )}
+              <button
+                id="auth0-signin-btn"
+                onClick={handleAuth0Login}
+                disabled={actionLoading}
+                className="flex items-center justify-center gap-2.5 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition duration-200 shadow-sm text-sm font-medium disabled:opacity-70 disabled:cursor-not-allowed w-full max-w-[320px]"
+              >
+                {actionLoading ? (
+                  <>
+                    <Spinner size="sm" />
+                    <span>Redirecting...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                    </svg>
+                    <span>Continue with Auth0</span>
+                  </>
+                )}
+              </button>
             </div>
 
             <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed">

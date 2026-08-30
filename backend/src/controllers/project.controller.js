@@ -16,7 +16,7 @@ const sanitizeProject = (project, requester = null) => {
     } else {
       projectObj.owner = { ...projectObj.owner };
     }
-    delete projectObj.owner.googleId;
+    delete projectObj.owner.auth0Sub;
     delete projectObj.owner.__v;
 
     // Email privacy: only show email to owner self or Admin
@@ -43,7 +43,10 @@ const sanitizeProjects = (projects, requester = null) => {
  */
 export const createProject = async (req, res, next) => {
   try {
-    const project = await projectService.createProject(req.user.userId, req.body, req.files);
+    const { title, description, category, techStack, demoLink, githubLink } = req.body;
+    const projectData = { title, description, category, techStack, demoLink, githubLink };
+    
+    const project = await projectService.createProject(req.user.userId, projectData, req.files);
     return ApiResponse.created(res, sanitizeProject(project, req.user), "Project created successfully");
   } catch (error) {
     next(error);
@@ -139,11 +142,14 @@ export const getProjectById = async (req, res, next) => {
  */
 export const updateProject = async (req, res, next) => {
   try {
+    const { title, description, category, techStack, demoLink, githubLink } = req.body;
+    const projectData = { title, description, category, techStack, demoLink, githubLink };
+
     const project = await projectService.updateProject(
       req.params.id,
       req.user.userId,
       req.user.role,
-      req.body,
+      projectData,
       req.files
     );
     return ApiResponse.success(res, sanitizeProject(project, req.user), "Project updated successfully");
