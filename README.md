@@ -1,124 +1,220 @@
-# Secure Student Project Showcase Portal
-### Information Security Assessment 2 — Implementation & Deployment Guide
+# Student Project Showcase Portal
 
-This repository hosts the secured version of the **Student Project Showcase Portal**, enhanced to fulfill the practical requirements of the Information Security Assessment 2. The legacy application has been hardened against OWASP Top 10 vulnerabilities, and custom/Google cookie logins have been replaced with a secure **OpenID Connect (OIDC) authentication pipeline via Auth0 (Authorization Code Flow with PKCE)**.
+A web-based platform for students to showcase their academic and personal projects. The system allows students to create project profiles, manage their portfolios, and share their work with other users.
 
----
+The application uses **React.js**, **Node.js/Express**, **MongoDB**, and **Auth0** for authentication. Security features have been implemented throughout the application, including role-based access control, IDOR protection, input validation, XSS prevention, NoSQL injection protection, and secure HTTPS communication.
 
-## 📌 Grading & Assessment Requirements Covered
+## Features
 
-- **OIDC Authentication & Logout**: Fully integrated utilizing Auth0's official React SDK and verified cryptographically on the Express backend via JSON Web Key Sets (JWKS).
-- **User Information Display**: Access Token attributes are decoded on the client, and profile synchronization is run once via the backend `/api/auth/me` endpoint to display authentic user records.
-- **Token Authorization Verification**: Access control middleware evaluates incoming Bearer tokens from request headers to verify identity and load database-managed user roles.
-- **OWASP Top 10 Hardening**: Integrated mitigations for IDOR (Broken Access Control), NoSQL Injection, Stored XSS, Mass Assignment, Security Headers (Helmet CSP), restricted CORS, and payload size limitations.
-- **Local HTTPS deployment**: Both React client and Node server configured to run securely on local HTTPS ports.
-- **Database Seeding and Schema Guide**: Schema descriptions and seed routines provided for MongoDB Atlas collections.
-- **Self-Contained Automated Security Tests**: Run mock security evaluations on validators, injection filters, and IDOR boundary logic.
+* User authentication with Auth0
+* Role-based access control
 
----
+  * Student
+  * Recruiter
+  * Admin
+* Student project creation and management
+* Project search and viewing
+* User profiles
+* Project likes and views
+* Image and thumbnail uploads
+* Project approval and management
+* Secure API authentication using Bearer access tokens
+* MongoDB Atlas database
+* Local HTTPS support
+* Input validation and security controls
 
-## 📁 Project Structure
+## Security
+
+The application includes several security measures:
+
+* **OIDC Authentication** using Auth0 with Authorization Code Flow and PKCE
+* **JWT validation** using Auth0 JWKS and RS256 signatures
+* **Role-based authorization** using roles stored in MongoDB
+* **IDOR protection** by verifying project ownership before updates and deletions
+* **Mass assignment protection** by accepting only permitted request fields
+* **NoSQL injection protection** through request validation
+* **XSS protection** through input sanitization, URL validation, and React's output escaping
+* **Helmet security headers**
+* **Restricted CORS**
+* **Request body size limits**
+* **HTTPS** for local development
+* Removal of legacy Google authentication and custom JWT signing
+
+## System Architecture
 
 ```text
-Launch_pad
-│
-├── certs/                      # Git-ignored local SSL key and cert (mkcert)
-├── docs/                       # Comprehensive assessment documentation
-│   ├── architecture.md         # Component boundaries and diagrams
-│   ├── authentication.md       # OIDC PKCE and JWKS verification specs
-│   ├── security.md             # Detailed OWASP Top 10 mitigations table
-│   └── security-test-report.md # Automated and manual test validation results
-│
-├── frontend/                   # React.js client (Vite + Tailwind CSS)
-│   ├── src/
-│   │   ├── api/axiosInstance.js # Interceptor injecting Bearer tokens
-│   │   ├── contexts/AuthContext.jsx # Auth0 authentication hooks
-│   │   └── pages/auth/LoginPage.jsx # OIDC Redirect page
-│   └── package.json
-│
-├── backend/                    # Express.js REST API server
-│   ├── src/
-│   │   ├── config/env.js       # App configuration and environment checker
-│   │   ├── config/seed.js      # User and project database seed routine
-│   │   ├── middlewares/auth.middleware.js # JWKS cryptographical validator
-│   │   ├── validators/project.validator.js # Joi schemas rejecting NoSQL operators
-│   │   ├── test-security.js    # Self-contained security test suite
-│   │   └── server.js           # Conditional HTTPS server bootloader
-│   └── package.json
-│
-└── README.md                   # Submission instructions and execution guide
+                  ┌─────────────────────┐
+                  │       Auth0         │
+                  │   OIDC / PKCE       │
+                  │      JWKS           │
+                  └──────────┬──────────┘
+                             │
+                             │ Authentication
+                             ▼
+┌─────────────────────┐    HTTPS    ┌─────────────────────┐
+│    React Frontend   │ ──────────► │    Express Backend  │
+│                     │             │                     │
+│ Vite                │             │ Authentication      │
+│ Tailwind CSS        │             │ Authorization        │
+│ Auth0 React SDK     │             │ Validation           │
+│ Axios               │             │ Security Controls    │
+└─────────────────────┘             └──────────┬──────────┘
+                                               │
+                                               │
+                                               ▼
+                                    ┌─────────────────────┐
+                                    │    MongoDB Atlas     │
+                                    │                     │
+                                    │ Users               │
+                                    │ Projects            │
+                                    │ Likes               │
+                                    │ Notifications       │
+                                    └─────────────────────┘
 ```
 
----
+## Project Structure
 
-## 🔒 Step-by-Step Configuration Guide
+```text
+Launch_pad/
+│
+├── backend/
+│   ├── src/
+│   │   ├── config/
+│   │   ├── controllers/
+│   │   ├── middlewares/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   ├── utils/
+│   │   ├── validators/
+│   │   └── server.js
+│   │
+│   ├── test/
+│   ├── package.json
+│   └── .env.example
+│
+├── frontend/
+│   ├── src/
+│   │   ├── api/
+│   │   ├── components/
+│   │   ├── contexts/
+│   │   ├── pages/
+│   │   └── App.jsx
+│   │
+│   ├── package.json
+│   └── .env.example
+│
+├── certs/
+├── docs/
+└── README.md
+```
 
-To deploy and demonstrate this secure application during the viva, follow these configurations:
+## Technologies
 
-### 1. Configure local SSL HTTPS Certificates
-This project mandates HTTPS. To deploy locally under SSL:
-1. Install `mkcert` (or use `openssl`):
-   ```bash
-   # On macOS using Homebrew
-   brew install mkcert
-   mkcert -install
+### Frontend
 
-   # On Windows using Chocolatey
-   choco install mkcert
-   mkcert -install
-   ```
-2. Create a folder named `certs` in the project root directory, navigate inside it, and generate certificates for `localhost`:
-   ```bash
-   mkdir certs
-   cd certs
-   mkcert localhost
-   ```
-3. This creates two files: `localhost.pem` (certificate) and `localhost-key.pem` (private key). Rename them to `server.crt` and `server.key` respectively. 
-4. The certs directory and files are already git-ignored inside the root `.gitignore` to prevent secret leaks.
+* React.js
+* Vite
+* Tailwind CSS
+* Axios
+* Auth0 React SDK
 
----
+### Backend
 
-### 2. Configure Auth0 (IdP)
-1. **Register Single Page Web Application**:
-   - Create an application in the Auth0 dashboard under **Applications > Applications**. Select **Single Page Web Application**.
-   - Configure **Allowed Callback URLs**, **Allowed Logout URLs**, and **Allowed Web Origins** to:
-     `https://localhost:5173`
-2. **Register API (Resource Server)**:
-   - Create an API under **Applications > APIs**.
-   - Set the **Identifier (Audience)** (e.g. `https://api.student-showcase.com`).
-   - Ensure the signing algorithm is set to **RS256**.
+* Node.js
+* Express.js
+* JWT
+* JWKS-RSA
+* Joi
+* Helmet
+* CORS
+* Mongoose
 
----
+### Database
 
-### 3. Setup Environment Variables
+* MongoDB Atlas
 
-#### Backend `.env`
-Create a `.env` file inside `backend/` directory:
+### Authentication
+
+* Auth0
+* OpenID Connect (OIDC)
+* Authorization Code Flow with PKCE
+* JSON Web Tokens (JWT)
+* RS256
+* JSON Web Key Sets (JWKS)
+
+## Requirements
+
+Make sure the following are installed:
+
+* Node.js
+* npm
+* MongoDB Atlas account
+* Auth0 account
+
+For local HTTPS, `mkcert` can be used to generate trusted development certificates.
+
+## Installation
+
+Clone the repository:
+
+```bash
+git clone <repository-url>
+cd Launch_pad
+```
+
+### Backend
+
+```bash
+cd backend
+npm install
+```
+
+Create a `.env` file based on `.env.example`.
+
+Example:
+
 ```env
 NODE_ENV=development
 PORT=5000
-MONGODB_URI=your_mongodb_atlas_connection_string
 
-# Auth0 OIDC Parameters
+MONGODB_URI=your_mongodb_connection_string
+
 AUTH0_DOMAIN=your-tenant.auth0.com
 AUTH0_AUDIENCE=https://your-api-identifier
 AUTH0_ISSUER=https://your-tenant.auth0.com/
 
-# Cloudinary Integration (Thumbnail uploads)
-CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
-CLOUDINARY_API_KEY=your_cloudinary_api_key
-CLOUDINARY_API_SECRET=your_cloudinary_api_secret
-
-# Client App URL
 CLIENT_URL=https://localhost:5173
 
-# Local HTTPS configuration (Paths to generated SSL certs)
 HTTPS_KEY_PATH=../certs/server.key
 HTTPS_CERT_PATH=../certs/server.crt
 ```
 
-#### Frontend `.env`
-Create a `.env` file inside `frontend/` directory:
+Start the backend:
+
+```bash
+npm run dev
+```
+
+The backend will run at:
+
+```text
+https://localhost:5000
+```
+
+### Frontend
+
+Open another terminal:
+
+```bash
+cd frontend
+npm install
+```
+
+Create a `.env` file based on `.env.example`.
+
+Example:
+
 ```env
 VITE_API_URL=https://localhost:5000/api
 VITE_AUTH0_DOMAIN=your-tenant.auth0.com
@@ -127,138 +223,136 @@ VITE_AUTH0_AUDIENCE=https://your-api-identifier
 VITE_AUTH0_REDIRECT_URI=https://localhost:5173
 ```
 
----
+Start the frontend:
 
-## 📦 Deployment & Execution
-
-### 1. Backend Server Deployment
-Navigate to the `backend/` directory, install packages, and start the development server:
 ```bash
-cd backend
-npm install
 npm run dev
 ```
-If key/cert paths exist on disk, the terminal will log:
-`🚀 Secure Server running on https://localhost:5000 in development mode`
 
-#### Seed Database
-Populate Mongoose collections with sample users (student, recruiter, admin) and projects:
+The application will be available at:
+
+```text
+https://localhost:5173
+```
+
+## Auth0 Configuration
+
+Create a **Single Page Application** in the Auth0 Dashboard.
+
+Configure the following URLs:
+
+```text
+Allowed Callback URLs:
+https://localhost:5173
+
+Allowed Logout URLs:
+https://localhost:5173
+
+Allowed Web Origins:
+https://localhost:5173
+```
+
+Create an API in Auth0 and use its identifier as the `AUTH0_AUDIENCE` value.
+
+The API should use **RS256** as its signing algorithm.
+
+## Database
+
+The application uses MongoDB Atlas with Mongoose.
+
+The main collections include:
+
+* Users
+* Projects
+* Likes
+* Follows
+* Notifications
+
+Users are identified using the Auth0 `sub` claim:
+
+```text
+auth0Sub
+```
+
+Roles are stored in the database:
+
+```text
+STUDENT
+RECRUITER
+ADMIN
+```
+
+A new authenticated user is automatically created as a `STUDENT` when they first access the application.
+
+## HTTPS
+
+For local HTTPS development, `mkcert` can be used.
+
+Generate certificates from the project root:
+
 ```bash
-npm run seed
+mkdir certs
+cd certs
+mkcert localhost
 ```
 
-#### Set User Roles Manually
-Use this command utility to modify user permission roles in MongoDB:
-```bash
-# Format: node src/set-role.js <email> <STUDENT|RECRUITER|ADMIN>
-node src/set-role.js student@example.edu ADMIN
+Rename the generated files to:
+
+```text
+server.crt
+server.key
 ```
 
-### 2. Frontend Client Deployment
-In a separate terminal shell, navigate to `frontend/`, install packages, and run the server:
-```bash
-cd frontend
-npm install
-npm run dev
-```
-The terminal will display:
-`➜  Local:   https://localhost:5173/`
+Keep the certificate files out of Git. They should be included in `.gitignore`.
 
----
+## Security Testing
 
-## 🗃 MongoDB Database Schema Guide
+The backend includes automated security tests covering authentication and common security vulnerabilities.
 
-This application interfaces with MongoDB using **Mongoose ODM**. Below is the collection schema definition mapping out the data layers.
+Run:
 
-### 1. Users Collection
-Stores user metadata and authorization roles:
-```javascript
-const userSchema = new Schema({
-  auth0Sub: { type: String, required: true, unique: true, index: true },
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  role: { type: String, enum: ['STUDENT', 'RECRUITER', 'ADMIN'], default: 'STUDENT' },
-  bio: { type: String, default: "" },
-  university: { type: String, default: "" },
-  department: { type: String, default: "" },
-  graduationYear: { type: Number },
-  profilePicture: { type: String, default: "" },
-  isActive: { type: Boolean, default: true }
-});
-```
-
-### 2. Projects Collection
-Stores project profiles and owner association fields:
-```javascript
-const projectSchema = new Schema({
-  owner: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  title: { type: String, required: true },
-  description: { type: String, required: true },
-  coverImage: { type: String, required: true },
-  images: [{ type: String }],
-  techStack: [{ type: String }],
-  demoLink: { type: String },
-  githubLink: { type: String },
-  category: { type: String, required: true },
-  status: { type: String, enum: ['PENDING', 'APPROVED', 'REJECTED', 'HIDDEN'], default: 'PENDING' },
-  likeCount: { type: Number, default: 0 },
-  viewCount: { type: Number, default: 0 }
-});
-```
-
----
-
-## 🛡 OWASP Top 10 Hardening Details
-
-- **IDOR Protection**: Mutation routes check ownership via database references (`project.owner.toString() === req.user.userId.toString()`). Tampering with project IDs in requests returns a `403 Forbidden` error.
-- **NoSQL Injection Mitigation**: Schema inputs validate type arrays and fields. The GET routing stack uses `validateQuery` which rejects query filter keys (like `category[$ne]=WEB`) with `400 Bad Request`, protecting the MongoDB database engine.
-- **Stored XSS Prevention**: User bio/text inputs are parsed using sanitizer modules before database writes. Scheme filters in Joi block links using schemes other than `http` or `https` (rejecting `javascript:` protocols). React handles dynamic DOM escaping.
-- **Mass Assignment Prevention**: Controllers explicitly pick fields (`title`, `description`, etc.) from incoming payloads, ensuring attackers cannot elevate permissions or change owner fields using injected JSON parameters.
-- **Security Headers & CORS**: Deploys `helmet` middleware setting safe frame, connection, and Content Security Policies, and locks CORS headers to the environment `CLIENT_URL`.
-- **DoS Payload Limits**: Enforces size limitations on the Express body parser, rejecting incoming JSON payloads larger than `50kb`.
-
----
-
-## 🧪 Automated Security Verification Tests
-
-Validate all security features locally with the automated test suite. The suite launches a self-contained test server on a random port, triggers mock validation inputs, tests IDOR attempts, checks NoSQL filtering, and prints results:
 ```bash
 cd backend
 npm test
 ```
 
-### Expected Output:
+The tests cover areas such as:
+
+* Unauthorized API access
+* Authentication handling
+* IDOR protection
+* Mass assignment
+* XSS-related input validation
+* NoSQL injection protection
+* Request validation
+
+## Documentation
+
+Additional technical documentation is available in the `docs` directory:
+
 ```text
-=== RUNNING SECURITY TESTS ===
-  ✅ [PASS] GET /auth/me without headers returns 401 (got 401)
-  ✅ [PASS] GET /auth/me with mock header returns student profile
-  ✅ [PASS] IDOR: Student B modifying Student A's project returns 403 (got 403)
-  ✅ [PASS] Mass Assignment: owner field cannot be modified by client PUT requests
-  ✅ [PASS] XSS: URL parameter using 'javascript:' protocol is rejected with 400 (got 400)
-  ✅ [PASS] NoSQL Injection: Operator query filter category[$ne] is rejected with 400 (got 400)
-=== TESTS COMPLETE: Passed 6/6 ===
+docs/
+├── architecture.md
+├── authentication.md
+├── security.md
+└── security-test-report.md
 ```
 
----
+These documents provide further details about the system architecture, authentication flow, security controls, and testing.
 
-## 📝 Submission & Viva Details
+## Environment Variables
 
-### 1. JSON Profile Submission File (`SE2022XXX.json`)
-Create a JSON metadata profile in the root named after your student ID:
-```json
-{
-  "sid": "SE2022XXX",
-  "name": "Name with Initials",
-  "app-url": "https://localhost:5173",
-  "git": "https://github.com/your-username/your-repo-name",
-  "blog": ["https://medium.com/@your-profile/your-security-blog-post"]
-}
+Environment files containing credentials and secrets should **not** be committed to Git.
+
+Use the provided example files:
+
+```text
+backend/.env.example
+frontend/.env.example
 ```
 
-### 2. Medium Blog Outline
-Write a blog documenting this security transformation. Your blog should highlight:
-- **Security Aspects**: Core vulnerabilities identified (IDOR, Injection, XSS) and how they threaten showcase portal platforms.
-- **Authentication Protocols**: Choosing OIDC over legacy password/cookie setups. Explaining how the OIDC PKCE flow acts as a robust standard for Single Page Applications (SPAs).
-- **Implementation Strategies**: Outline of the JWT token validation logic using JWKSRSA, and custom authorize middleware check pipelines.
-- **Challenges Faced**: Resolving peer dependency conflicts during local library installs under ECONNRESET, and handling read-only request properties when writing express sanitizers.
-- **Learning Outcomes**: Gaining hands-on experience configuring cloud identity providers (Auth0) and implementing automated security check runners.
+Create your own `.env` files locally.
+
+## License
+
+This project was developed as a university software project.
