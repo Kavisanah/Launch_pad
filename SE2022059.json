@@ -1,0 +1,9 @@
+{
+  "sid": "SE2022059",
+  "name": "Kavisanah Kanakeshwaran",
+  "app-url": "https://localhost:5173",
+  "git": "https://github.com/Kavisanah/Launch_pad.git",
+  "blog": [
+    "https://medium.com/@kanakeshwarankavisanah/securing-a-mern-stack-application-with-auth0-oidc-and-owasp-security-hardening-9cbdc2b32750"
+  ]
+}
